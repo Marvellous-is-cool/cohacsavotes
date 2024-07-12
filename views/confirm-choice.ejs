@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirm Your Choices</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
+    />
+    <link rel="stylesheet" href="/styles/confirm-choice.css" />
+    <style>
+      body {
+        background-color: #071111;
+        color: #fff;
+        font-family: "Arial", sans-serif;
+      }
+      .container {
+        margin-top: 50px;
+      }
+      .confirmation-box {
+        background-color: #202020;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .confirmation-box h3 {
+        color: #ffd700;
+        text-transform: uppercase;
+      }
+      .confirmation-box p {
+        color: #ddd;
+      }
+      .btn-confirm,
+      .btn-back {
+        margin-top: 20px;
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+      }
+      .btn-confirm {
+        background-color: #28a745;
+        color: #fff;
+      }
+      .btn-back {
+        background-color: #dc3545;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('header') %>
+    <div class="container">
+      <h1 class="text-center mb-5" data-aos="fade-down">
+        Confirm Your Choices
+      </h1>
+      <div id="choicesContainer">
+        <!-- Choices will be dynamically inserted here -->
+      </div>
+      <button id="confirmButton" class="btn btn-confirm" data-aos="fade-up">
+        Confirm Choices
+      </button>
+      <button id="backButton" class="btn btn-back" data-aos="fade-up">
+        Go Back
+      </button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        AOS.init({ duration: 600 });
+
+        const choicesContainer = document.getElementById("choicesContainer");
+        const storedChoices = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const id = localStorage.key(i);
+          const name = localStorage.getItem(id);
+          storedChoices.push({ id, name });
+        }
+
+        // Fetch post details using AJAX
+        storedChoices.forEach((choice) => {
+          fetch(`/api/aspirant/${choice.id}`)
+            .then((response) => response.json())
+            .then((data) => {
+              const choiceElement = document.createElement("div");
+              choiceElement.className = "confirmation-box";
+              choiceElement.innerHTML = `
+            <h3>${choice.name}</h3>
+            <p>As: ${data.postTitle}</p>
+          `;
+              choicesContainer.appendChild(choiceElement);
+            })
+            .catch((error) =>
+              console.error("Error fetching aspirant data:", error)
+            );
+        });
+
+        document
+          .getElementById("confirmButton")
+          .addEventListener("click", () => {
+            const choices = storedChoices.map((choice) => choice.id);
+
+            fetch("/voteNow", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ choices }),
+            })
+              .then((response) => {
+                if (response.ok) {
+                  // Set vote_status to true for the user
+                  fetch("/setVoteStatus", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ voteStatus: true }),
+                  })
+                    .then((response) => {
+                      if (response.ok) {
+                        window.location.href = "/voteNowSuccess";
+                      } else {
+                        window.location.href =
+                          "/confirm-choice?error=Voting failed.";
+                      }
+                    })
+                    .catch((error) =>
+                      console.error("Error setting vote status:", error)
+                    );
+                } else {
+                  window.location.href = "/confirm-choice?error=Voting failed.";
+                }
+              })
+              .catch((error) =>
+                console.error("Error confirming choices:", error)
+              );
+          });
+
+        document.getElementById("backButton").addEventListener("click", () => {
+          window.history.back();
+        });
+      });
+    </script>
+  </body>
+</html>

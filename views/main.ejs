@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>COHACSA - Voting App</title>
+    <!-- Include Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Include AOS CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
+    />
+    <link rel="stylesheet" href="/styles/buttons.css" />
+    <style>
+      body {
+        background-color: rgb(7, 1, 1);
+        color: #fff;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: white;
+      }
+      .aspirant-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .position h3 {
+        color: #ffd700;
+        border-bottom: 2px solid #ffd700;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+      .name {
+        text-transform: lowercase;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('header') %>
+    <div class="container mt-5">
+      <h1>Cast your Votes</h1>
+      <div class="mb-5" data-aos="flip-up">
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control"
+          placeholder="Search aspirants..."
+        />
+      </div>
+      <div id="postsContainer">
+        <% posts.sort((a, b) => a.postId - b.postId).forEach((post, index) => {
+        %> <% if (post.aspirants.length > 0) { %>
+        <div class="position" data-aos="<%= index === 0 ? '' : 'fade-up' %>">
+          <h3><%= post.title %></h3>
+          <div class="row">
+            <% post.aspirants.forEach(aspirant => { %>
+            <div
+              class="col-md-4 aspirant-card"
+              data-aos="<%= index === 0 ? '' : 'fade-up' %>"
+              data-name="<%= aspirant.full_name.toLowerCase() %>"
+              data-post="<%= post.title.toLowerCase() %>"
+            >
+              <div class="aspirant-box">
+                <img
+                  src="<%= aspirant.photo_url %>"
+                  alt="<%= aspirant.full_name %>"
+                  class="img-fluid"
+                />
+                <h4 class="name"><%= aspirant.full_name.toLowerCase() %></h4>
+                <p>Level: <%= aspirant.level %></p>
+                <button
+                  class="btn btn-vote vote-btn"
+                  data-id="<%= aspirant.id %>"
+                  data-name="<%= aspirant.full_name %>"
+                >
+                  Vote
+                </button>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+        <% } %> <% }); %>
+      </div>
+      <button
+        id="vote-now-btn"
+        class="btn btn-vote-now mt-3"
+        data-aos="fade-up"
+        data-aos-duration="300"
+        data-aos-offset="50"
+      >
+        Vote Now!
+      </button>
+    </div>
+    <!-- Include Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include AOS JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <!-- Initialize AOS -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        AOS.init({
+          duration: 600, // Reduce duration for faster animations
+        });
+      });
+    </script>
+    <!-- Include the search.js script -->
+    <script src="/script/search.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const voteButtons = document.querySelectorAll(".vote-btn");
+        voteButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            const id = this.getAttribute("data-id");
+            const name = this.getAttribute("data-name");
+            localStorage.setItem(id, name);
+            this.textContent = "Voted";
+            this.disabled = true;
+          });
+        });
+
+        const voteNowButton = document.getElementById("vote-now-btn");
+        voteNowButton.addEventListener("click", function () {
+          window.location.href = "/confirm-votes";
+        });
+
+        // Disable buttons for already voted aspirants
+        voteButtons.forEach((button) => {
+          const id = button.getAttribute("data-id");
+          if (localStorage.getItem(id)) {
+            button.textContent = "Voted";
+            button.disabled = true;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

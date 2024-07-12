@@ -1,23 +1,35 @@
-// search.js
 document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("searchInput");
-  const contestantsContainer = document.getElementById("contestantsContainer");
-  const contestantCards =
-    contestantsContainer.querySelectorAll(".contestant-card");
+  const postsContainer = document.getElementById("postsContainer");
+  const positions = postsContainer.querySelectorAll(".position");
   let noResultsMessage = null;
 
   searchInput.addEventListener("input", function () {
     const searchTerm = searchInput.value.toLowerCase();
     let noResults = true;
 
-    contestantCards.forEach(function (card) {
-      const nickname = card.querySelector(".nickname").innerText.toLowerCase();
+    positions.forEach((position) => {
+      let positionHasMatch = false;
+      const aspirantCards = position.querySelectorAll(".aspirant-card");
 
-      if (nickname.includes(searchTerm)) {
-        card.style.display = "block";
-        noResults = false;
+      aspirantCards.forEach(function (card) {
+        const name = card.getAttribute("data-name");
+        const post = card.getAttribute("data-post");
+
+        if (name.includes(searchTerm) || post.includes(searchTerm)) {
+          card.style.display = "block";
+          positionHasMatch = true;
+          noResults = false;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      if (positionHasMatch) {
+        position.style.display = "block";
+        AOS.refresh(); // Refresh AOS to apply animations to newly displayed elements
       } else {
-        card.style.display = "none";
+        position.style.display = "none";
       }
     });
 
@@ -26,9 +38,9 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!noResultsMessage) {
         noResultsMessage = document.createElement("p");
         noResultsMessage.classList.add("mt-3", "text-danger");
-        contestantsContainer.appendChild(noResultsMessage);
+        postsContainer.appendChild(noResultsMessage);
       }
-      noResultsMessage.innerText = `No contestant with the username "${searchTerm}" found.`;
+      noResultsMessage.innerText = `No aspirant or post with the name "${searchTerm}" found.`;
     } else {
       // Remove the no results message if it exists
       if (noResultsMessage) {

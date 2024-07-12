@@ -1,11 +1,11 @@
-<!-- views/admin/edit-contestant.ejs -->
+<!-- views/admin/edit-aspirant.ejs -->
 
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edit Contestant</title>
+    <title>Edit Aspirant</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -14,8 +14,8 @@
 
   <body>
     <div class="container mt-4">
-      <h2>Edit Contestant</h2>
-      <form action="/admin/edit-contestant/<%= contestant.id %>" method="post">
+      <h2>Edit Aspirant</h2>
+      <form action="/admin/edit-aspirant/<%= aspirant.id %>" method="post">
         <div class="form-group">
           <label for="nickname">Nickname</label>
           <input
@@ -23,7 +23,7 @@
             class="form-control"
             id="nickname"
             name="nickname"
-            value="<%= contestant.nickname %>"
+            value="<%= aspirant.nickname %>"
             required
           />
         </div>
@@ -34,7 +34,7 @@
             class="form-control"
             id="level"
             name="level"
-            value="<%= contestant.level %>"
+            value="<%= aspirant.level %>"
             required
           />
         </div>
@@ -45,7 +45,7 @@
             class="form-control"
             id="photo_url"
             name="photo_url"
-            value="<%= contestant.photo_url %>"
+            value="<%= aspirant.photo_url %>"
             required
           />
         </div>
@@ -56,7 +56,7 @@
             class="form-control"
             id="votes"
             name="votes"
-            value="<%= contestant.votes %>"
+            value="<%= aspirant.votes %>"
             required
           />
         </div>
@@ -70,7 +70,7 @@
             accept="image/*"
           />
         </div>
-        <button type="submit" class="btn btn-primary">Update Contestant</button>
+        <button type="submit" class="btn btn-primary">Update Aspirant</button>
         <a href="/admin/dashboard" class="btn btn-secondary ml-2">Cancel</a>
       </form>
     </div>

@@ -1,0 +1,72 @@
+body {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.navbar {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.card-body {
+  text-align: center;
+}
+
+.vote-count {
+  font-size: 2rem;
+  color: #ffd700; /* Gold color */
+}
+
+/* Custom CSS for responsive top right links */
+.navbar-nav {
+  margin-right: 0;
+}
+@media (max-width: 768px) {
+  .navbar-nav {
+    flex-direction: column;
+    text-align: right;
+  }
+  .navbar-collapse {
+    justify-content: flex-end;
+  }
+  .navbar-toggler {
+    background-color: #e0c100 !important;
+  }
+}
+
+.navbar {
+  margin-bottom: 50px;
+  background-color: #000000;
+  border-bottom: 2px solid #ffd700;
+  outline: none !important;
+}
+.navbar-brand {
+  color: #ffd700 !important;
+  display: flex;
+  align-items: center;
+}
+.navbar-brand img {
+  margin-right: 10px;
+  width: 40px;
+  height: 40px;
+}
+.nav-link {
+  color: #ffffff !important;
+}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Lincssa Voting</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <style>
+      body {
+        background-color: #000000;
+        color: #ffffff;
+        font-family: "Arial", sans-serif;
+        outline: none;
+      }
+      .navbar {
+        margin-bottom: 50px;
+        background-color: #000000;
+        border-bottom: 2px solid #ffd700;
+        outline: none !important;
+      }
+      .navbar-brand {
+        color: #ffd700 !important;
+        display: flex;
+        align-items: center;
+      }
+      .navbar-brand img {
+        margin-right: 10px;
+        width: 40px;
+        height: 40px;
+      }
+      .nav-link {
+        color: #ffffff !important;
+      }
+      .welcome-container {
+        text-align: center;
+        padding: 50px 20px;
+      }
+      .welcome-container h1 {
+        font-size: 3rem;
+      }
+      small {
+        color: #ffd700 !important;
+        font-size: 0.8em;
+      }
+      .proceed-btn {
+        margin-top: 20px;
+        background-color: #ffd700;
+        border: none;
+        color: #000000;
+      }
+      .proceed-btn:hover {
+        background-color: #e0c100;
+      }
+      /* Custom CSS for responsive top right links */
+      .navbar-nav {
+        margin-right: 0;
+      }
+      @media (max-width: 768px) {
+        .navbar-nav {
+          flex-direction: column;
+          text-align: right;
+        }
+        .navbar-collapse {
+          justify-content: flex-end;
+        }
+        .navbar-toggler {
+          background-color: #e0c100;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+      <a class="navbar-brand" href="#">
+        <img src="/images/logo.png" alt="Logo" />Lincssa Voting
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="/my-account">My Profile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout">Log Out</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <div class="welcome-container">
+      <h1>Welcome, <small><%= student.matric %></small></h1>
+      <p>
+        Welcome to the official voting platform for Lincssa elections. Your
+        voice matters, and this system will ensure your vote is counted securely
+        and accurately.
+      </p>
+      <% if (student.vote_status) { %>
+      <p class="text-success">You have already voted. Thank you!</p>
+      <% } else { %>
+      <p>
+        Instructions: To participate in the voting process, please click the
+        "Proceed to Vote" button below. You will be guided through a simple and
+        secure voting procedure.
+      </p>
+      <a href="/main" class="btn btn-primary proceed-btn">Proceed to Vote</a>
+      <% } %>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

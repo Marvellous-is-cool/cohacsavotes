@@ -1,17 +1,30 @@
 const connection = require("../models/connection"); // Update the path based on your file structure
 const uploadFile = require("../helpers/uploadFile"); // Update the path based on your file structure
 
-const updateContestant = async (contestantId, editedDetails) => {
+const getAspirantById = async (aspirantId) => {
   try {
-    // Fetch the existing contestant details for photo URL
-    const [existingContestant] = await connection.execute(
-      "SELECT * FROM contestants WHERE id = ?",
-      [contestantId]
+    const [aspirant] = await connection.execute(
+      "SELECT * FROM aspirants WHERE id = ?",
+      [aspirantId]
+    );
+    return aspirant[0];
+  } catch (error) {
+    console.error("Error fetching aspirant by ID:", error);
+    throw error;
+  }
+};
+
+const updateAspirant = async (aspirantId, editedDetails) => {
+  try {
+    // Fetch the existing aspirant details for photo URL
+    const [existingAspirant] = await connection.execute(
+      "SELECT * FROM aspirants WHERE id = ?",
+      [aspirantId]
     );
 
-    // Update contestant details in the database
+    // Update aspirant details in the database
     const updateQuery = `
-        UPDATE contestants
+        UPDATE aspirants
         SET
           nickname = ?,
           level = ?,
@@ -23,33 +36,32 @@ const updateContestant = async (contestantId, editedDetails) => {
     // Upload photo if provided, or use the existing one
     editedDetails.photo_url = editedDetails.photo
       ? (await uploadFile(editedDetails.photo, editedDetails)).photo
-      : existingContestant[0].photo_url;
+      : existingAspirant[0].photo_url;
 
     const values = [
       editedDetails.nickname,
       editedDetails.level,
       editedDetails.photo_url,
       editedDetails.votes,
-      contestantId,
+      aspirantId,
     ];
 
-    await connection.query(updateQuery, values);
+    await connection.execute(updateQuery, values);
 
-    console.log(`Contestant with ID ${contestantId} updated successfully.`);
+    console.log(`Aspirant with ID ${aspirantId} updated successfully.`);
   } catch (error) {
-    console.error("Error updating contestant:", error);
+    console.error("Error updating aspirant:", error);
     throw error;
   }
 };
-const renderEditContestantPage = async (req, res) => {
-  try {
-    // Fetch the necessary data (e.g., contestant details) based on req.params
-    const awardId = req.params.awardId;
-    const contestantId = req.params.contestantId;
-    // Fetch the necessary data (e.g., contestant details) based on req.params
-    const contestant = await getContestantById(contestantId); // Implement this function
 
-    res.render("/admin/edit-contestant", { awardId, contestant });
+const renderEditAspirantPage = async (req, res) => {
+  try {
+    // Fetch the necessary data (e.g., aspirant details) based on req.params
+    const aspirantId = req.params.aspirantId;
+    const aspirant = await getAspirantById(aspirantId);
+
+    res.render("admin/edit-aspirant", { aspirant }); // Corrected template path
   } catch (error) {
     console.error("Error rendering edit page:", error);
     req.flash("error", "Error rendering edit page. Please try again.");
@@ -57,23 +69,22 @@ const renderEditContestantPage = async (req, res) => {
   }
 };
 
-const editContestant = async (req, res) => {
+const editAspirant = async (req, res) => {
   try {
-    // Get the edited contestant details from the form submission
-    const awardId = req.params.awardId;
-    const contestantId = req.params.contestantId;
-    const editedDetails = req.body; // Modify this based on your form structure
+    // Get the edited aspirant details from the form submission
+    const aspirantId = req.params.aspirantId;
+    const editedDetails = req.body;
 
-    // Update the contestant details in the database
-    await updateContestant(contestantId, editedDetails); // Implement this function
+    // Update the aspirant details in the database
+    await updateAspirant(aspirantId, editedDetails);
 
-    req.flash("success", "Contestant updated successfully.");
+    req.flash("success", "Aspirant updated successfully.");
     res.redirect("/admin/dashboard");
   } catch (error) {
-    console.error("Error updating contestant:", error);
-    req.flash("error", "Error updating contestant. Please try again.");
+    console.error("Error updating aspirant:", error);
+    req.flash("error", "Error updating aspirant. Please try again.");
     res.redirect("/admin/dashboard");
   }
 };
 
-module.exports = { updateContestant, renderEditContestantPage, editContestant };
+module.exports = { updateAspirant, renderEditAspirantPage, editAspirant };

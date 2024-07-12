@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voted Successfully</title>
+    <!-- AOS CSS - You need to include this in your project -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        width: 90%;
+        max-width: 600px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      h1 {
+        font-size: 2.5rem;
+        color: #4caf50;
+        margin-bottom: 20px;
+      }
+      p {
+        font-size: 1.2rem;
+        color: #555;
+        line-height: 1.6;
+      }
+      .buttons {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #4caf50;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        font-size: 1rem;
+        margin-right: 10px;
+      }
+      .button:hover {
+        background-color: #45a049;
+      }
+      .view-live-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+      .view-live-button:hover {
+        background-color: #0056b3;
+      }
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2rem;
+        }
+        p {
+          font-size: 1rem;
+        }
+        .button {
+          font-size: 0.9rem;
+          padding: 10px 20px;
+        }
+        .view-live-button {
+          font-size: 0.8rem;
+          padding: 6px 12px;
+          top: 5px;
+          right: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" data-aos="fade-up">
+      <h1>Voted Successfully!</h1>
+      <p>
+        Your vote has been successfully recorded. Thank you for participating.
+      </p>
+      <div class="buttons" data-aos="fade-up" data-aos-delay="200">
+        <a href="/" class="button">Go Home</a>
+        <a href="/my-account" class="button">My Profile</a>
+        <a href="/live" class="view-live-button">View Votes Live</a>
+      </div>
+    </div>
+
+    <!-- AOS JavaScript - You need to include this in your project -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+      AOS.init();
+    </script>
+  </body>
+</html>

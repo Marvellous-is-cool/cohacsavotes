@@ -72,13 +72,13 @@ app.use(cors()); // Enable CORS
 app.use(express.json());
 
 // Use routes from the 'routes' folder
-const adminRoutes = require("./routes/adminRoutes/adminContestantRoute");
+const adminRoutes = require("./routes/adminRoutes/index");
 const clientRoutes = require("./routes/clientRoutes");
 
 // Use other routes as needed
 app.use("/", clientRoutes);
 
-// Use the adminContestantRoute with the base path /admin
+// Use the adminAspirantRoute with the base path /admin
 app.use("/admin", adminRoutes);
 
 // Error handling middleware
@@ -88,7 +88,7 @@ app.use((err, req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  res.status(404).render("bye");
+  res.status(404).render("suspended");
 });
 
 // Start the server

@@ -1,194 +1,193 @@
 const express = require("express");
 const router = express.Router();
 const clientController = require("../../controllers/clientController");
-const adminController = require("../../controllers/adminController");
-const voteNowRouter = require("./voteNow.js");
 const authMiddleware = require("../../middlewares/authMiddleware");
-const adminContestantRouter = require("../adminRoutes/adminContestantRoute"); // Import the adminContestantRoute
+const postAspirantController = require("../../controllers/postAspirantController");
+const voteNow = require("./voteNow");
 
-// // // Index route
-router.get("/", async (req, res) => {
-  try {
-    const awards = await clientController.getAwards();
-    res.render("index", { awards });
-  } catch (error) {
-    console.error("Error rendering index:", error);
-    res.status(500).render("suspended");
-  }
+// Render the login page with an optional error message
+router.get("/", (req, res) => {
+  const error = req.flash("error")[0];
+  res.render("index", { error });
 });
 
-// router.get("/", async (req, res) => {
-//   try {
-//     res.render("bye");
-//   } catch (error) {
-//     console.error("Error rendering index:", error);
-//     res.status(500).send("Internal Server Error");
-//     res.render("bye");
-//   }
-// });
-
-router.post("/vote", async (req, res) => {
-  try {
-    const { award } = req.body;
-
-    // Fetch selected award details
-    const selectedAward = await clientController.getSelectedAward(award);
-
-    // Fetch contestants for the selected award
-    const contestants = await clientController.getContestantsForAward(award);
-
-    // Add this line to log the fetched contestants
-
-    res.render("contestants", {
-      selectedAward,
-      contestants,
-    });
-  } catch (error) {
-    console.error("Error processing vote:", error);
-    res.status(500).render("suspended");
-  }
-});
-
-router.get("/contestant/:id/votenow/payment", async (req, res) => {
-  try {
-    const contestantId = req.params.id;
-
-    // Fetch contestant details by ID with associated award title
-    const selectedContestant = await clientController.getContestantById(
-      contestantId
-    );
-
-    // Pass both selectedContestant and awardTitle to the template
-    res.render("voteNow", {
-      selectedContestant,
-      awardTitle: selectedContestant.award_titles[0], // Assuming there's only one award title
-    });
-  } catch (error) {
-    console.error("Error fetching contestant details:", error);
-    res.status(500).render("suspended");
-  }
-});
-
-router.use("/", voteNowRouter);
-
-// // Define the route for /voteNowSucess
-router.get("/voteNowSucess", async (req, res) => {
-  try {
-    const { status, email, contestantId } = req.query;
-
-    // Fetch contestant details by ID using the correct function
-    const selectedContestant = await clientController.getContestantById(
-      parseInt(contestantId)
-    );
-
-    res.render("voteNowSucess", {
-      status,
-      email,
-      contestantId,
-      selectedContestant,
-    });
-  } catch (error) {
-    console.error("Error fetching contestant details:", error);
-    res.status(500).render("suspended");
-  }
-});
-
-// // Apply authMiddleware only to the routes under /admin
-router.use("/admin", authMiddleware, adminContestantRouter);
-
-// Admin login route accessible without /admin prefix
-router.get("/login", (req, res) => {
-  const error = req.flash("error")[0]; // Get the first error message
-  res.render("admin-login", { error });
-});
-
-// // Admin authentication route
-router.post("/authenticate", async (req, res) => {
-  const { username, password } = req.body;
+// Handle the login form submission
+router.post("/login", async (req, res) => {
+  const { matric, password } = req.body;
 
   try {
-    const { success, error, admin } = await adminController.authenticateAdmin(
-      username,
+    const student = await clientController.authenticateStudent(
+      matric,
       password
     );
 
-    if (success) {
-      // Authentication successful
-      req.session.regenerate((err) => {
-        if (err) {
-          console.error("Error regenerating session:", err);
-          res.status(500).render("suspended");
-        } else {
-          req.session.admin = true;
-          req.session.adminUsername = admin.username; // Include admin's username
-
-          // Set session expiration to 20 hours from now
-          const sessionExpiration = 20 * 60 * 60 * 1000; // 20 hours in milliseconds
-          req.session.cookie.expires = new Date(Date.now() + sessionExpiration);
-          req.session.cookie.maxAge = sessionExpiration;
-
-          res.redirect("/admin/dashboard");
-        }
-      });
+    if (student) {
+      req.session.student = student;
+      res.redirect("/welcome");
     } else {
-      // Authentication failed
-      req.flash(
-        "error",
-        error || "Incorrect username or password. Please try again."
-      );
-
-      res.redirect("/login");
+      req.flash("error", "Invalid matric number or password.");
+      res.redirect("/");
     }
   } catch (error) {
-    console.error("Error during admin authentication:", error);
+    console.error("Error during student authentication:", error);
     res.status(500).render("suspended");
+  }
+});
+
+// Render the welcome page after successful login
+router.get("/welcome", authMiddleware, async (req, res) => {
+  try {
+    const student = req.session.student;
+
+    res.render("welcome", { student });
+  } catch (error) {
+    console.error("Error rendering welcome page:", error);
+    res.status(500).render("suspended");
+  }
+});
+
+// Render the main page after successful login
+router.get("/main", authMiddleware, async (req, res) => {
+  try {
+    const posts = await clientController.getPostsAndAspirants();
+    res.render("main", { posts });
+  } catch (error) {
+    console.error("Error rendering main page:", error);
+    res.status(500).render("suspended");
+  }
+});
+
+// Handle the vote submission
+router.post("/voteNow", authMiddleware, async (req, res) => {
+  const selectedAspirants = req.body.choices;
+  const studentId = req.session.student.id; // Assuming you store student id in session
+
+  try {
+    // Increment vote for each selected aspirant
+    await Promise.all(
+      selectedAspirants.map((aspirantId) => {
+        return clientController.incrementVote(aspirantId);
+      })
+    );
+
+    // Update vote_status to true (1) for the user
+    await clientController.setVoteStatus(studentId, true);
+
+    res.redirect("/voteNowSuccess");
+  } catch (error) {
+    console.error("Error during voting:", error);
+    res.redirect("/confirm-choice?error=Voting failed. Please try again.");
+  }
+});
+
+// Route to update vote status
+router.post("/setVoteStatus", authMiddleware, async (req, res) => {
+  const { voteStatus } = req.body;
+  const studentId = req.session.student.id; // Assuming you store student id in session
+
+  try {
+    await clientController.setVoteStatus(studentId, voteStatus);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error setting vote status:", error);
+    res.status(500).json({ error: "Failed to update vote status" });
+  }
+});
+
+// Route to render the success page
+router.get("/voteNowSuccess", authMiddleware, (req, res) => {
+  res.render("voteNowSuccess");
+});
+
+// Render the vote confirmation page
+router.get("/confirm-votes", authMiddleware, (req, res) => {
+  res.render("confirm-choice");
+});
+
+// Render the live vote page
+router.get("/live", authMiddleware, (req, res) => {
+  res.render("live");
+});
+
+// Fetch post details by post ID
+router.get("/api/aspirant/:id", authMiddleware, async (req, res) => {
+  try {
+    const post = await postAspirantController.getAspirantWithPost(
+      req.params.id
+    );
+    res.json(post);
+  } catch (error) {
+    console.error("Error fetching post details:", error);
+    res.status(500).json({ error: "Failed to fetch post details" });
+  }
+});
+
+// Fetch live vote counts
+router.get("/api/vote-counts", async (req, res) => {
+  try {
+    const voteCounts = await clientController.getVoteCounts();
+    res.json(voteCounts);
+  } catch (error) {
+    console.error("Error fetching vote counts:", error);
+    res.status(500).json({ error: "Failed to fetch vote counts" });
+  }
+});
+
+// Render the My Account page
+router.get("/my-account", authMiddleware, async (req, res) => {
+  const student = req.session.student;
+  res.render("my-account", { student });
+});
+
+// change password
+router.post("/api/change-password", authMiddleware, async (req, res) => {
+  const studentId = req.session.student.id;
+  const { newPassword } = req.body;
+
+  try {
+    await clientController.changePassword(studentId, newPassword);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ error: "Failed to change password" });
+  }
+});
+
+// bye
+router.get("/bye", async (req, res) => {
+  try {
+    res.render("bye");
+  } catch (error) {
+    console.error("Error rendering index:", error);
+    res.status(500).send("Internal Server Error");
+    res.render("bye");
   }
 });
 
 // Logout route
 router.get("/logout", (req, res) => {
-  // Destroy the session
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session:", err);
       res.status(500).render("suspended");
     } else {
-      // Redirect to the login page after destroying the session
       res.redirect("/");
     }
   });
 });
-// // Endpoint to handle session destruction when the tab or connection is closed
-router.post("/destroy-session", (req, res) => {
-  // Destroy the session
+
+// Delete session route
+router.post("/delete-session", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session:", err);
-      res.status(500).render("suspended");
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to delete session" });
     } else {
-      res.sendStatus(200);
+      res.json({ success: true });
     }
   });
 });
-
-// // router.get("/live/votes", async (req, res) => {
-// //   try {
-// //     // Fetch admin dashboard data using the admin controller
-// //     const awards = await adminController.getDashboardData();
-// //     res.render("votes", { awards });
-// //   } catch (error) {
-// //     console.error("Error fetching admin dashboard data:", error);
-// //     res.status(500).send("Internal Server Error");
-// //   }
-// // });
-
-// router.get("/live/votes", async (req, res) => {
-//   try {
-//     res.render("suspended");
-//   } catch (error) {
-//     console.error("Error rendering index:", error);
-//     res.status(500).send("Internal Server Error");
-//   }
-// });
 
 module.exports = router;

@@ -1,137 +1,140 @@
 const connection = require("../models/connection");
-const awardContestantController = require("./awardContestantController");
+const postAspirantController = require("./postAspirantController");
 
-async function getAwards() {
-  const sql = "SELECT * FROM awards ORDER BY title ASC";
+async function authenticateStudent(matric, password) {
+  const sql = "SELECT * FROM students WHERE matric = ? AND password = ?";
   try {
-    const [awards] = await connection.execute(sql);
-    return awards;
+    const [rows] = await connection.execute(sql, [matric, password]);
+    return rows[0] || null;
   } catch (error) {
-    console.error("Error fetching awards:", error);
+    console.error("Error authenticating student:", error);
     throw error;
   }
 }
 
-async function getSelectedAward(awardId) {
-  const sql = "SELECT * FROM awards WHERE id = ?";
+async function getPostsAndAspirants() {
+  const sqlPosts = "SELECT * FROM posts ORDER BY id ASC";
+  const sqlAspirants = `
+    SELECT a.*, pa.post_id 
+    FROM aspirants a 
+    JOIN post_aspirants pa ON a.id = pa.aspirant_id
+  `;
   try {
-    const [selectedAward] = await connection.execute(sql, [awardId]);
+    const [posts] = await connection.execute(sqlPosts);
+    const [aspirants] = await connection.execute(sqlAspirants);
 
-    return selectedAward[0];
+    const postsWithAspirants = posts.map((post) => {
+      post.aspirants = aspirants.filter(
+        (aspirant) => aspirant.post_id === post.id
+      );
+      return post;
+    });
+
+    return postsWithAspirants;
   } catch (error) {
-    console.error("Error fetching selected award:", error);
+    console.error("Error fetching posts and aspirants:", error);
     throw error;
   }
 }
 
-async function getContestantsForAward(awardId) {
-  try {
-    const contestants = await awardContestantController.getContestantsForAward(
-      awardId
-    );
-
-    return contestants;
-  } catch (error) {
-    console.error("Error fetching contestants:", error);
-    throw error;
-  }
-}
-
-async function incrementVotesForContestant(contestantId, numberOfVotes) {
-  const sql = "UPDATE contestants SET votes = votes + ? WHERE id = ?";
-  try {
-    await connection.execute(sql, [numberOfVotes, contestantId]);
-  } catch (error) {
-    console.error("Error incrementing votes for contestant:", error);
-    throw error;
-  }
-}
-
-async function getContestantById(contestantId) {
-  const sql = `
-  SELECT c.*, GROUP_CONCAT(a.title) AS award_titles
-  FROM contestants c
-  LEFT JOIN award_contestants ac ON c.id = ac.contestant_id
-  LEFT JOIN awards a ON ac.award_id = a.id
-  WHERE c.id = ?
-  GROUP BY c.id;
-`;
+async function toggleVote(aspirantId, studentId) {
+  const sqlCheckVote =
+    "SELECT * FROM votes WHERE student_id = ? AND aspirant_id = ?";
+  const sqlVote = "INSERT INTO votes (student_id, aspirant_id) VALUES (?, ?)";
+  const sqlUnvote =
+    "DELETE FROM votes WHERE student_id = ? AND aspirant_id = ?";
 
   try {
-    const [contestant] = await connection.execute(sql, [contestantId]);
-
-    if (contestant.length > 0) {
-      // Convert the comma-separated string of award titles to an array
-      const awardTitles = contestant[0].award_titles
-        ? contestant[0].award_titles.split(",")
-        : [];
-
-      return {
-        ...contestant[0],
-        award_titles: awardTitles,
-      };
+    const [existingVote] = await connection.execute(sqlCheckVote, [
+      studentId,
+      aspirantId,
+    ]);
+    if (existingVote.length > 0) {
+      await connection.execute(sqlUnvote, [studentId, aspirantId]);
     } else {
-      return null;
+      await connection.execute(sqlVote, [studentId, aspirantId]);
     }
   } catch (error) {
-    console.error("Error fetching contestant by ID:", error);
+    console.error("Error toggling vote:", error);
     throw error;
   }
 }
 
-// Function to handle database queries related to payments
-async function handlePaymentQueries(
-  nickname,
-  amount,
-  status,
-  selectedContestant
-) {
-  const updatePaymentQuery =
-    "UPDATE payments SET status = ? WHERE contestant_nickname = ?";
-  const insertPaymentQuery = `
-    INSERT INTO payments (contestant_nickname, award_id, amount_divided_by_10, payment_date, status)
-    VALUES (?, ?, ?, ?, ?)
+async function getPostById(id) {
+  try {
+    const [post] = await connection.execute(
+      "SELECT * FROM posts WHERE id = ?",
+      [id]
+    );
+    if (!post.length) {
+      throw new Error("Post not found");
+    }
+
+    const aspirants = await postAspirantController.getAspirantsForPost(id);
+
+    return { post: post[0], aspirants };
+  } catch (error) {
+    console.error("Error fetching post details:", error);
+    throw new Error("Error fetching post details");
+  }
+}
+
+async function incrementVote(aspirantId) {
+  const sql = "UPDATE aspirants SET votes = votes + 1 WHERE id = ?";
+
+  try {
+    await connection.execute(sql, [aspirantId]);
+  } catch (error) {
+    console.error("Error incrementing vote:", error);
+    throw error;
+  }
+}
+
+async function getVoteCounts() {
+  const sql = `
+    SELECT a.full_name AS name, a.votes 
+    FROM aspirants a 
+    ORDER BY a.id
   `;
 
   try {
-    // Get the contestant details with award_id
-    const contestantDetails = await getContestantById(selectedContestant.id);
-
-    if (!contestantDetails) {
-      console.error("Contestant not found:", selectedContestant.id);
-      throw new Error("Contestant not found");
-    }
-
-    // Calculate amountDividedBy10 here before using it in the next execute call
-    const amountDividedBy10 = amount / 10;
-
-    // Update payment status in the database
-    await connection.execute(updatePaymentQuery, [status, nickname]);
-
-    // Insert payment details into the new payments table
-    await connection.execute(insertPaymentQuery, [
-      nickname,
-      contestantDetails.award_id || null,
-      amountDividedBy10 || null,
-      new Date(),
-      status,
-    ]);
-
-    console.log(
-      "Payment queries executed successfully for Contestant Nickname:",
-      nickname
-    );
+    const [rows] = await connection.execute(sql);
+    return rows;
   } catch (error) {
-    console.error("Error executing payment queries:", error);
+    console.error("Error fetching vote counts:", error);
+    throw error;
+  }
+}
+
+async function changePassword(studentId, newPassword) {
+  const sql = "UPDATE students SET password = ? WHERE id = ?";
+  try {
+    await connection.execute(sql, [newPassword, studentId]);
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw error;
+  }
+}
+
+async function setVoteStatus(studentId, voteStatus) {
+  const sql = "UPDATE students SET vote_status = ? WHERE id = ?";
+  try {
+    // Ensure voteStatus is either true (1) or false (0)
+    const statusValue = voteStatus ? 1 : 0;
+    await connection.execute(sql, [statusValue, studentId]);
+  } catch (error) {
+    console.error("Error setting vote status:", error);
     throw error;
   }
 }
 
 module.exports = {
-  getAwards,
-  getSelectedAward,
-  getContestantsForAward,
-  incrementVotesForContestant,
-  getContestantById,
-  handlePaymentQueries,
+  authenticateStudent,
+  getPostsAndAspirants,
+  toggleVote,
+  getPostById,
+  incrementVote,
+  getVoteCounts,
+  changePassword,
+  setVoteStatus,
 };
